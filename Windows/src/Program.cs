@@ -78,14 +78,20 @@ namespace CM_Launcher
                     };
                 });
 
-                var isAdmin = WindowsSpecific.IsAdministrator();
-                if (isAdmin)
+                using (new Mutex(true, "CMLauncher", out var createdNew))
                 {
-                    LaunchApp(args, true);
-                }
-                else
-                {
-                    using (new Mutex(true, "CMLauncher", out var createdNew))
+                    var isAdmin = WindowsSpecific.IsAdministrator();
+                    if (isAdmin)
+                    {
+                        if (createdNew)
+                        {
+                            MessageBox.Show("Don't run CML as admin");
+                            return;
+                        }
+
+                        LaunchApp(args, true);
+                    }
+                    else
                     {
                         if (!createdNew) return;
 

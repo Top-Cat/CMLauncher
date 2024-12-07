@@ -28,6 +28,12 @@ namespace CM_Launcher
                         stream.Close();
                     }
                 }
+                else
+                {
+                    specific.GetVersion().Update(0, "");
+                    File.WriteAllBytes(file, Array.Empty<byte>());
+                    File.Delete(file);
+                }
             }
             catch (Exception e)
             {

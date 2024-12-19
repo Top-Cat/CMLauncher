@@ -1,4 +1,5 @@
-﻿using Xamarin.Essentials;
+﻿using Foundation;
+using Xamarin.Essentials;
 
 namespace OSX
 {
@@ -22,6 +23,7 @@ namespace OSX
 
         private Version()
         {
+            NSUserDefaults.StandardUserDefaults.Synchronize();
             VersionNumber = Preferences.Get(VERSION_NUMBER_KEY, 0);
             VersionServer = Preferences.Get(VERSION_SERVER_KEY, "");
         }

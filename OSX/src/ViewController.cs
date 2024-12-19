@@ -1,5 +1,5 @@
 using System;
-
+using System.IO;
 using AppKit;
 using Foundation;
 
@@ -20,8 +20,13 @@ namespace OSX
             progressBar.Indeterminate = true;
 
             IVersion ver = Version.GetVersion();
-            //ver.Update(0, "");
-            new Main(new MacSpecific(progressLabel, progressBar));
+            var macSpecific = new MacSpecific(progressLabel, progressBar);
+            if (MainClass.CleanDownload || !File.Exists($"{macSpecific.GetDownloadFolder()}/{macSpecific.GetBinaryPath()}"))
+            {
+                ver.Update(0, "");
+            }
+
+            new Main(macSpecific);
             
             // \o/
         }

@@ -50,17 +50,20 @@ public class LinuxSpecific : IPlatformSpecific
 
     private static void RewriteLine(int lineNumber, string newText)
     {
-        newText = newText.Substring(0, Math.Min(newText.Length, Console.WindowWidth));
+        try {
+            newText = newText.Substring(0, Math.Min(newText.Length, Console.WindowWidth));
 
-        var currentLineCursor = Console.CursorTop;
-        if (currentLineCursor - lineNumber > 0) {
-            Console.SetCursorPosition(0, currentLineCursor - lineNumber);
-            Console.Write(newText); Console.WriteLine(new string(' ', Console.WindowWidth - newText.Length));
-            Console.SetCursorPosition(0, currentLineCursor);
+            var currentLineCursor = Console.CursorTop;
+            if (currentLineCursor - lineNumber > 0) {
+                Console.SetCursorPosition(0, currentLineCursor - lineNumber);
+                Console.Write(newText); Console.WriteLine(new string(' ', Console.WindowWidth - newText.Length));
+                Console.SetCursorPosition(0, currentLineCursor);
+                return;
+            }
         }
-        else {
-            Console.WriteLine(newText);
-        }
+        catch (Exception) { }
+        
+        Console.WriteLine(newText);
     }
     
     public void UpdateLabel(string label)

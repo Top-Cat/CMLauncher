@@ -175,6 +175,13 @@ public class LinuxSpecific : IPlatformSpecific
 
     public string GetDownloadFolder()
     {
+        // _args.Length - 1 because we need to get the arg after
+        for (var i = 0; i < _args.Length - 1; ++i) {
+            if (_args[i] == "--cmldownloadfolder") {
+                return _args[i + 1];
+            }
+        }
+        
         return System.AppContext.BaseDirectory;
     }
 
@@ -195,6 +202,6 @@ public class LinuxSpecific : IPlatformSpecific
 
     private string GetCMLPath()
     {
-        return Path.Combine(GetDownloadFolder(), AppDomain.CurrentDomain.FriendlyName);
+        return Path.Combine(System.AppContext.BaseDirectory, AppDomain.CurrentDomain.FriendlyName);
     }
 }

@@ -50,7 +50,9 @@ public class LinuxSpecific : IPlatformSpecific
 
     private static void RewriteLine(int lineNumber, string newText)
     {
-        try {
+        // If interactive console
+        if (Console.WindowWidth > 0)
+        {
             newText = newText.Substring(0, Math.Min(newText.Length, Console.WindowWidth));
 
             var currentLineCursor = Console.CursorTop;
@@ -61,7 +63,6 @@ public class LinuxSpecific : IPlatformSpecific
                 return;
             }
         }
-        catch (Exception) { }
         
         Console.WriteLine(newText);
     }
@@ -177,7 +178,7 @@ public class LinuxSpecific : IPlatformSpecific
     {
         // _args.Length - 1 because we need to get the arg after
         for (var i = 0; i < _args.Length - 1; ++i) {
-            if (_args[i] == "--cmldownloadfolder") {
+            if (_args[i] == "--dir") {
                 return _args[i + 1];
             }
         }

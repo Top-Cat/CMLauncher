@@ -51,13 +51,14 @@ namespace Linux
 
                     Console.WriteLine("CML Linux");
 
-                    if (!File.Exists("xdelta3.so"))
+                    var specific = new LinuxSpecific(args);
+
+                    if (!File.Exists(Path.Combine(specific.GetDownloadFolder(), "xdelta3.so")))
                     {
                         Console.WriteLine("Extracting xdelta3");
-                        WriteResourceToFile("Linux.Costura32.xdelta3.so", "xdelta3.so");
+                        WriteResourceToFile("Linux.Costura32.xdelta3.so", Path.Combine(specific.GetDownloadFolder(), "xdelta3.so"));
                     }
 
-                    var specific = new LinuxSpecific(args);
                     int tries = 0;
                     while (tries++ < 3)
                     {

@@ -53,12 +53,14 @@ namespace Linux
 
                     var specific = new LinuxSpecific(args);
 
-                    if (!File.Exists(Path.Combine(specific.GetDownloadFolder(), "xdelta3.so")))
+                    var xdelta3Path = Path.Combine(specific.GetDownloadFolder(), "xdelta3.so");
+
+                    if (!File.Exists(xdelta3Path))
                     {
                         try
                         {
                             Console.WriteLine("Extracting xdelta3");
-                            WriteResourceToFile("Linux.Costura32.xdelta3.so", Path.Combine(specific.GetDownloadFolder(), "xdelta3.so"));
+                            WriteResourceToFile("Linux.Costura32.xdelta3.so", xdelta3Path);
                         }
                         catch (Exception ex)
                         {

@@ -29,18 +29,18 @@ namespace Linux
 
             return false;
         }
-        
+
         public static void WriteResourceToFile(string resourceName, string fileName)
         {
-            using(var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+            using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
             {
-                using(var file = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+                using (var file = new FileStream(fileName, FileMode.Create, FileAccess.Write))
                 {
                     resource.CopyTo(file);
-                } 
+                }
             }
         }
-        
+
         public static void Main(string[] args)
         {
             using (SentrySdk.Init("https://76dcf1f2484f4839a78b3713420b5147@o462013.ingest.sentry.io/5556322"))
@@ -51,28 +51,23 @@ namespace Linux
 
                     Console.WriteLine("CML Linux");
 
-                    if (!File.Exists("xdelta3.so"))
-                    {
-                        Console.WriteLine("Extracting xdelta3");
-                        WriteResourceToFile("Linux.Costura32.xdelta3.so", "xdelta3.so");
-                    }
-
                     var specific = new LinuxSpecific(args);
+
                     int tries = 0;
                     while (tries++ < 3)
                     {
                         if (!FilesLocked(specific))
                         {
                             new Main(specific);
-                            
+
                             while (true)
                                 Thread.Sleep(1000);
-                            
+
                             return;
                         }
                         Thread.Sleep(1000 * tries);
                     }
-                    
+
                     specific.Exit();
                 }
             }

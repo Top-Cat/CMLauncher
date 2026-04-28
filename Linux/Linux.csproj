@@ -10,6 +10,7 @@
   <PropertyGroup>
     <PublishTrimmed>true</PublishTrimmed>
     <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -96,6 +97,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Costura32\xdelta3.so" />
+    <Content CopyToOutputDirectory="PreserveNewest" Include="Costura32\xdelta3.so" Link="xdelta3.so" Pack="true" PackagePath="xdelta3.so" />
   </ItemGroup>
 </Project>

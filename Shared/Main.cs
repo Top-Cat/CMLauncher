@@ -227,6 +227,7 @@ public class Main : IProgress<float>
     private async Task<int> UpdateUsingZip(int version)
     {
         platformSpecific.UpdateLabel("Downloading update...");
+        var etag = platformSpecific.UseCDN() ? EtagValidation.HexMd5 : EtagValidation.None;
         string downloadUrl = platformSpecific.UseCDN() ? $"{cdnUrl}/{platformSpecific.GetCDNPrefix()}{version}/{platformSpecific.GetCDNFilename()}" :
             $"https://jenkins.kirkstall.top-cat.me/job/ChroMapper/{version}/artifact/{platformSpecific.GetJenkinsFilename()}";
 
@@ -236,7 +237,7 @@ public class Main : IProgress<float>
             {
                 using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await client.DownloadAsync(downloadUrl, file, this);
+                    await client.DownloadAsync(downloadUrl, file, this, etagValidation: etag);
                 }
             }
 
@@ -288,6 +289,7 @@ public class Main : IProgress<float>
     private async Task<int> UpdateUsingPatch(int source, int dest)
     {
         platformSpecific.UpdateLabel($"Downloading patch for {dest}");
+        var etag = platformSpecific.UseCDN() ? EtagValidation.HexMd5 : EtagValidation.None;
         string downloadUrl = $"{cdnUrl}/{platformSpecific.GetCDNPrefix()}{dest}/{source}.patch";
 
         using (var tmp = new TempFile())
@@ -296,7 +298,7 @@ public class Main : IProgress<float>
             {
                 using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await client.DownloadAsync(downloadUrl, file, this);
+                    await client.DownloadAsync(downloadUrl, file, this, etagValidation: etag);
                 }
             }
 

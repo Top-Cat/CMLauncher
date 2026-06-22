@@ -38,7 +38,7 @@ public class UpdateManager
             {
                 using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await client.DownloadAsync($"{Config.CDN_URL}/{platform.GetCMLFilename()}", file);
+                    await client.DownloadAsync($"{Config.CDN_URL}/{platform.GetCMLFilename()}", file, etagValidation: EtagValidation.HexMd5);
                 }
             }
 

@@ -24,12 +24,12 @@ public abstract class EtagValidation
         void Update(byte[] buffer, int offset, int count);
     }
     
-    private class NullImpl : EtagValidation
+    private class NullImpl : EtagValidation, IDigest
     {
         
         public override IDigest NewDigest()
         {
-            return new Digest();
+            return this;
         }
 
         public override bool Check(string etag, IDigest hash)
@@ -37,21 +37,14 @@ public abstract class EtagValidation
             return true;
         }
         
-        //
-
-        private class Digest : IDigest
+        public void Update(byte[] buffer, int offset, int count)
         {
-            
-            public void Update(byte[] buffer, int offset, int count)
-            {
-                // NO-OP
-            }
+            // NO-OP
+        }
 
-            public void Dispose()
-            {
-                // NO-OP
-            }
-            
+        public void Dispose()
+        {
+            // NO-OP
         }
         
     }
@@ -80,29 +73,29 @@ public abstract class EtagValidation
         private class Digest : IDigest
         {
 
-            public readonly MD5 Hash;
+            private readonly MD5 _hash;
 
             public Digest()
             {
-                Hash = MD5.Create();
+                _hash = MD5.Create();
             }
             
             //
 
             public void Update(byte[] buffer, int offset, int count)
             {
-                Hash.TransformBlock(buffer, offset, count, null, 0);
+                _hash.TransformBlock(buffer, offset, count, null, 0);
             }
 
             public byte[] Complete()
             {
-                Hash.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                return Hash.Hash;
+                _hash.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                return _hash.Hash;
             }
 
             public void Dispose()
             { 
-                Hash.Dispose();
+                _hash.Dispose();
             }
             
         }

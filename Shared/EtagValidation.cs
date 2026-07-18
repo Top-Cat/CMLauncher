@@ -11,13 +11,11 @@ public abstract class EtagValidation
     public static readonly EtagValidation None = new NullImpl();
     public static readonly EtagValidation HexMd5 = new Md5HexImpl();
     
-    //
     
     public abstract IDigest NewDigest();
 
     public abstract bool Check(string etag, IDigest hash);
     
-    //
     
     public interface IDigest : IDisposable
     {
@@ -68,8 +66,6 @@ public abstract class EtagValidation
             return CryptographicOperations.FixedTimeEquals(a, b);
         }
         
-        //
-        
         private class Digest : IDigest
         {
 
@@ -79,8 +75,6 @@ public abstract class EtagValidation
             {
                 _hash = MD5.Create();
             }
-            
-            //
 
             public void Update(byte[] buffer, int offset, int count)
             {

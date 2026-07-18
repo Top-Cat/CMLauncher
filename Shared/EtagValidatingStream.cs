@@ -27,8 +27,6 @@ public class EtagValidatingStream : Stream
         _etag = etag;
     }
     
-    //
-    
     public override void Flush()
     {
         _source.Flush();

@@ -16,10 +16,10 @@ public static class HttpClientExtensions
     public static async Task DownloadAsync(
         this HttpClient client, 
         string requestUri, 
-        Stream destination, 
+        Stream destination,
+        EtagValidation etagValidation,
         IProgress<float> progress = null,
-        CancellationToken cancellationToken = default,
-        EtagValidation etagValidation = null)
+        CancellationToken cancellationToken = default)
     {
         // Get the http headers first to examine the content length
         using (var response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
@@ -30,7 +30,7 @@ public static class HttpClientExtensions
             using (var download = await response.Content.ReadAsStreamAsync())
             {
                 // Reroute download stream for etag validation
-                Stream source = etag != null && etagValidation != null && !etag.IsWeak && etag.Tag.Length != 0 ?
+                Stream source = etag != null && !etag.IsWeak && etag.Tag.Length != 0 ?
                         new EtagValidatingStream(download, etagValidation, etag.Tag) : download;
 
                 // Ignore progress reporting when no progress reporter was 

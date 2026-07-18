@@ -237,7 +237,7 @@ public class Main : IProgress<float>
             {
                 using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await client.DownloadAsync(downloadUrl, file, this, etagValidation: etag);
+                    await client.DownloadAsync(downloadUrl, file, etag, this);
                 }
             }
 
@@ -298,7 +298,7 @@ public class Main : IProgress<float>
             {
                 using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await client.DownloadAsync(downloadUrl, file, this, etagValidation: etag);
+                    await client.DownloadAsync(downloadUrl, file, etag, this);
                 }
             }
 

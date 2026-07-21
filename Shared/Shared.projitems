@@ -9,6 +9,7 @@
     <Import_RootNamespace>Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)EtagValidatingStream.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TempFile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Channel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Config.cs" />

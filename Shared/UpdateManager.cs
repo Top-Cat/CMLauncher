@@ -1,15 +1,14 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 public class UpdateManager
 {
-    private readonly IPlatformSpecific platform;
+    private readonly IPlatformSpecific _platform;
 
     public UpdateManager(IPlatformSpecific platform)
     {
-        this.platform = platform;
+        _platform = platform;
     }
 
     public async Task CheckForUpdates()
@@ -38,11 +37,11 @@ public class UpdateManager
             {
                 using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await client.DownloadAsync($"{Config.CDN_URL}/{platform.GetCMLFilename()}", file);
+                    await client.DownloadAsync($"{Config.CDN_URL}/{_platform.GetCMLFilename()}", file);
                 }
             }
 
-            platform.Restart(tmp.Path);
+            _platform.Restart(tmp.Path);
         }
     }
 }

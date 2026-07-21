@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -14,48 +13,43 @@ using SharpCompress.Readers;
 
 public class Main : IProgress<float>
 {
-    private readonly ReleaseChannel useChannel;
-    private readonly IPlatformSpecific platformSpecific;
-    private readonly string cdnUrl;
+    private readonly ReleaseChannel _useChannel;
+    private readonly IPlatformSpecific _platformSpecific;
+    private readonly string _cdnUrl;
 
     public Main(IPlatformSpecific platformSpecific)
     {
-        this.platformSpecific = platformSpecific;
+        _platformSpecific = platformSpecific;
 
         var mainNode = platformSpecific.GetCMConfig();
-        useChannel = mainNode["ReleaseChannel"].Value == "1" ? ReleaseChannel.Dev : ReleaseChannel.Stable;
-        cdnUrl = mainNode.HasKey("ReleaseServer") ? mainNode["ReleaseServer"].Value : Config.CDN_URL;
+        _useChannel = mainNode["ReleaseChannel"].Value == "1" ? ReleaseChannel.Dev : ReleaseChannel.Stable;
+        _cdnUrl = mainNode.HasKey("ReleaseServer") ? mainNode["ReleaseServer"].Value : Config.CDN_URL;
 
         new Thread(DoUpdate).Start();
     }
 
     private async Task<int> GetLatestBuildNumber(ReleaseChannel releaseChannel)
     {
-        using (var client = new HttpClient().Setup())
-        {
-            var channel = releaseChannel == ReleaseChannel.Stable ? "stable" : "dev";
+        using var client = new HttpClient().Setup();
+        var channel = releaseChannel == ReleaseChannel.Stable ? "stable" : "dev";
 
-            using (var response = await client.GetAsync($"{cdnUrl}/{channel}"))
-            {
-                using (var content = response.Content)
-                {
-                    return int.Parse(await content.ReadAsStringAsync());
-                }
-            }
-        }
+        using var response = await client.GetAsync($"{_cdnUrl}/{channel}");
+        using var content = response.Content;
+
+        return int.Parse(await content.ReadAsStringAsync());
     }
 
     private void SetVersion(int version)
     {
-        platformSpecific.GetVersion().Update(version, cdnUrl);
+        _platformSpecific.GetVersion().Update(version, _cdnUrl);
     }
 
     private async void DoUpdate()
     {
         try
         {
-            platformSpecific.CleanupUpdate();
-            await new UpdateManager(platformSpecific).CheckForUpdates();
+            _platformSpecific.CleanupUpdate();
+            await new UpdateManager(_platformSpecific).CheckForUpdates();
         }
         catch (Exception e)
         {
@@ -63,9 +57,9 @@ public class Main : IProgress<float>
         }
 
         try {
-            var version = platformSpecific.GetVersion();
+            var version = _platformSpecific.GetVersion();
             var current = version.VersionNumber;
-            var desired = await GetLatestBuildNumber(useChannel);
+            var desired = await GetLatestBuildNumber(_useChannel);
 
             /*
              * Update if:
@@ -73,9 +67,9 @@ public class Main : IProgress<float>
              *  - We have an old version
              *  - We have a newer version but we want to be on the stable build
              */
-            if (version.VersionServer != cdnUrl || current < desired || (current > desired && useChannel == ReleaseChannel.Stable))
+            if (version.VersionServer != _cdnUrl || current < desired || (current > desired && _useChannel == ReleaseChannel.Stable))
             {
-                PerformUpdate(current, desired);
+                await PerformUpdate(current, desired);
                 return;
             }
         }
@@ -84,16 +78,16 @@ public class Main : IProgress<float>
             SentrySdk.CaptureException(e);
         }
 
-        platformSpecific.Exit();
+        _platformSpecific.Exit();
     }
 
-    private async void PerformUpdate(int current, int desired)
+    private async Task PerformUpdate(int current, int desired)
     {
         var stable = await GetLatestBuildNumber(ReleaseChannel.Stable);
-        var version = platformSpecific.GetVersion();
+        var version = _platformSpecific.GetVersion();
 
         // Downgrade or first run
-        if (version.VersionServer != cdnUrl || current > desired)
+        if (version.VersionServer != _cdnUrl || current > desired)
         {
             current = await UpdateUsingZip(stable);
         }
@@ -101,7 +95,7 @@ public class Main : IProgress<float>
         // We need to update
         if (current < desired)
         {
-            var patches = await FindPath(platformSpecific.GetCDNPrefix(), current, desired);
+            var patches = await FindPath(_platformSpecific.GetCDNPrefix(), current, desired);
 
             // That's a lot of patches
             if (current < stable && (patches == null || patches.Count > Config.PATCH_SKIP_LIMIT))
@@ -114,7 +108,7 @@ public class Main : IProgress<float>
                 else
                 {
                     // Check how many patches we would save
-                    var currentPatches = await FindPath(platformSpecific.GetCDNPrefix(), stable, desired);
+                    var currentPatches = await FindPath(_platformSpecific.GetCDNPrefix(), stable, desired);
                     if (patches == null || patches.Count - currentPatches.Count > Config.PATCH_SKIP_LIMIT)
                     {
                         // We'll save having to do many patches if we download the stable zip
@@ -135,7 +129,7 @@ public class Main : IProgress<float>
 
                 // Abandon ship!
                 // Hopefully someone creates an update path for us next time around
-                platformSpecific.Exit();
+                _platformSpecific.Exit();
                 return;
             }
 
@@ -158,7 +152,7 @@ public class Main : IProgress<float>
             }
         }
 
-        platformSpecific.Exit();
+        _platformSpecific.Exit();
     }
 
     private async Task<List<int>> FindPath(string prefix, int current, int desired)
@@ -168,7 +162,7 @@ public class Main : IProgress<float>
 
         using (var client = new HttpClient().Setup())
         {
-            using (var response = await client.GetAsync($"{cdnUrl}?prefix={prefix}{desired}/"))
+            using (var response = await client.GetAsync($"{_cdnUrl}?prefix={prefix}{desired}/"))
             {
                 using (var content = response.Content)
                 {
@@ -226,34 +220,32 @@ public class Main : IProgress<float>
 
     private async Task<int> UpdateUsingZip(int version)
     {
-        platformSpecific.UpdateLabel("Downloading update...");
-        string downloadUrl = platformSpecific.UseCDN() ? $"{cdnUrl}/{platformSpecific.GetCDNPrefix()}{version}/{platformSpecific.GetCDNFilename()}" :
-            $"https://jenkins.kirkstall.top-cat.me/job/ChroMapper/{version}/artifact/{platformSpecific.GetJenkinsFilename()}";
+        _platformSpecific.UpdateLabel("Downloading update...");
+        var downloadUrl = _platformSpecific.UseCDN() ? $"{_cdnUrl}/{_platformSpecific.GetCDNPrefix()}{version}/{_platformSpecific.GetCDNFilename()}" :
+            $"https://jenkins.kirkstall.top-cat.me/job/ChroMapper/{version}/artifact/{_platformSpecific.GetJenkinsFilename()}";
 
-        using (var tmp = new TempFile())
+        using var tmp = new TempFile();
+        using var client = new HttpClient().Setup();
+
+        await RetryOnFailure(_platformSpecific, async () =>
         {
-            using (var client = new HttpClient().Setup())
-            {
-                using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    await client.DownloadAsync(downloadUrl, file, this);
-                }
-            }
+            using var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None);
+            await client.DownloadAsync(downloadUrl, file, this);
+        });
 
-            ExtractZip(tmp.Path);
+        ExtractZip(tmp.Path);
 
-            SetVersion(version);
+        SetVersion(version);
 
-            return version;
-        }
+        return version;
     }
 
     private void ExtractZip(string filename)
     {
-        platformSpecific.UpdateLabel("Extracting zip");
+        _platformSpecific.UpdateLabel("Extracting zip");
         Report(0);
 
-        string destinationDirectoryFullPath = platformSpecific.GetDownloadFolder();
+        string destinationDirectoryFullPath = _platformSpecific.GetDownloadFolder();
 
         using (Stream stream = File.OpenRead(filename))
         {
@@ -281,30 +273,28 @@ public class Main : IProgress<float>
 
                 patch.FileName = patch.FileName.Replace("chromapper/", "").Replace("ChroMapper.app/", "");
                 return patch;
-            }).WithProgressReporting(stream.Length, this, "Extracting", platformSpecific.UpdateLabel).ForAll(p => { });
+            }).WithProgressReporting(stream.Length, this, "Extracting", _platformSpecific.UpdateLabel).ForAll(p => { });
         }
     }
 
     private async Task<int> UpdateUsingPatch(int source, int dest)
     {
-        platformSpecific.UpdateLabel($"Downloading patch for {dest}");
-        string downloadUrl = $"{cdnUrl}/{platformSpecific.GetCDNPrefix()}{dest}/{source}.patch";
+        _platformSpecific.UpdateLabel($"Downloading patch for {dest}");
+        var downloadUrl = $"{_cdnUrl}/{_platformSpecific.GetCDNPrefix()}{dest}/{source}.patch";
 
-        using (var tmp = new TempFile())
+        using var tmp = new TempFile();
+        using var client = new HttpClient().Setup();
+
+        await RetryOnFailure(_platformSpecific, async () =>
         {
-            using (var client = new HttpClient().Setup())
-            {
-                using (var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    await client.DownloadAsync(downloadUrl, file, this);
-                }
-            }
+            using var file = new FileStream(tmp.Path, FileMode.Create, FileAccess.Write, FileShare.None);
+            await client.DownloadAsync(downloadUrl, file, this);
+        });
 
-            ApplyPatch(tmp.Path);
-            SetVersion(dest);
+        ApplyPatch(tmp.Path);
+        SetVersion(dest);
 
-            return dest;
-        }
+        return dest;
     }
 
     private void ApplyPatch(string filename)
@@ -324,15 +314,15 @@ public class Main : IProgress<float>
                 if (compressionType == "xdelta" || compressionType == "bsdiff")
                 {
                     patch.FileName = keyFilename = keyFilename.Substring(compressionType.Length + 1);
-                    patchFilename = patchFilename.Replace(compressionType, platformSpecific.LocalFolderName()).TrimStart('/');
+                    patchFilename = patchFilename.Replace(compressionType, _platformSpecific.LocalFolderName()).TrimStart('/');
                 }
                 else
                 {
                     compressionType = "";
-                    patchFilename = Path.Combine(platformSpecific.LocalFolderName(), patchFilename);
+                    patchFilename = Path.Combine(_platformSpecific.LocalFolderName(), patchFilename);
                 }
 
-                patchFilename = Path.Combine(platformSpecific.GetDownloadFolder(), patchFilename);
+                patchFilename = Path.Combine(_platformSpecific.GetDownloadFolder(), patchFilename);
 
                 byte[] newFile = memStream.ToArray();
 
@@ -355,12 +345,29 @@ public class Main : IProgress<float>
                 File.WriteAllBytes(patchFilename, newFile);
 
                 return patch;
-            }).WithProgressReporting(stream.Length, this, "Patching", platformSpecific.UpdateLabel).ForAll(p => { });
+            }).WithProgressReporting(stream.Length, this, "Patching", _platformSpecific.UpdateLabel).ForAll(p => { });
         }
     }
 
     public void Report(float value)
     {
-        platformSpecific.UpdateProgress(value);
+        _platformSpecific.UpdateProgress(value);
+    }
+
+    private static async Task RetryOnFailure(IPlatformSpecific platformSpecific, Func<Task> action, int attempts = 2)
+    {
+        for (var i = 0; i < attempts; i++)
+        {
+            try
+            {
+                await action();
+            }
+            catch (EtagInvalidException e)
+            {
+                platformSpecific.UpdateLabel($"Patch validation failed. Expected {e.Expected}, Actual {e.Actual}");
+
+                if (i + 1 == attempts) throw;
+            }
+        }
     }
 }
